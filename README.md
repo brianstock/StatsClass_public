@@ -7,11 +7,11 @@ March 23 -- April 2, 2017
 
 Many thanks to our funders:
 
-<a href="default.asp">
-<img src="https://raw.githubusercontent.com/brianstock/StatsClass_public/master/logos/saveourseas.png" alt="" height="100">
+<a href="http://saveourseas.com/">
+<img src="https://raw.githubusercontent.com/brianstock/StatsClass_public/master/logos/saveourseas.png" alt="" height="50">
 </a>
-<a href="default.asp">
-<img src="https://raw.githubusercontent.com/brianstock/StatsClass_public/master/logos/saveourseas.png" alt="" height="100">
+<a href="http://saveourseas.com/">
+<img src="https://raw.githubusercontent.com/brianstock/StatsClass_public/master/logos/saveourseas.png" alt="" height="50">
 </a>
 
 [![](https://raw.githubusercontent.com/brianstock/StatsClass_public/master/logos/saveourseas.png)](http://saveourseas.com/)
