@@ -1,0 +1,128 @@
+---
+title: "ANOVA"
+author: "Brian Stock"
+date: "March 26, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = '/home/brian/Documents/Workshops/Mexico fisheries/StatsClass')
+```
+
+----
+
+```{r eval=FALSE, echo=FALSE}
+# Generate data
+# CPUE from 4 locations
+set.seed(100)
+sites <- c("P.Abreojos", "Bocana", "B.Asuncion", "B.Tortugas")
+n.sites <- length(sites)
+N <- round(rnorm(n.sites,mean=50,sd=6))
+site.means <- rnorm(n.sites,mean=125,sd=12)
+means.vec <- rep(site.means,N)
+sd.vec <- rep(c(12,15,18,13),N)
+dat <- data.frame(site=rep(sites,N),
+                  CPUE=rnorm(means.vec,mean=means.vec,sd=sd.vec))
+write.csv(dat,"/home/brian/Documents/Workshops/Mexico fisheries/StatsClass/ANOVA_CPUE.csv",row.names=FALSE)
+```
+
+You have been monitoring fishing at 4 sites in Baja California: Bahia de Tortugas, Bahia Asuncion, Punta Abreojos, and La Bocana. At each site, you record how much each panga catches per day. You want to know if catch/day is different by site. Because there are more than 2 sites, we cannot do a t-test. ANOVA!
+
+<img src="/home/brian/Documents/Workshops/Mexico fisheries/StatsClass/ANOVA_CPUE_map.png" width="500px"/>
+
+----
+
+# 1. Get your data into R and look at it
+
+#### Load Packages
+```{r results='hide', warning=FALSE, message=FALSE}
+library(multcomp) # for Tukey multiple comparisons
+library(dplyr)    # for summarizing data
+```
+
+#### Load Data
+```{r eval=FALSE, echo=TRUE}
+# Set your working directory to where your workshop files are
+setwd("/home/brian/Documents/Workshops/Mexico fisheries/StatsClass")
+dat <- read.csv("ANOVA_CPUE.csv")
+```
+
+```{r eval=TRUE, echo=FALSE}
+dat <- read.csv("ANOVA_CPUE.csv")
+```
+
+
+#### Quick look at `dat`
+```{r}
+names(dat)
+dim(dat)
+head(dat)
+summary(dat)
+table(dat$site)
+```
+
+#### Summarize CPUE by site
+```{r}
+boxplot(CPUE~site,data=dat,xlab="Site",ylab="Catch/day (# fish)")
+```
+```{r}
+dat.summary <- dat %>% 
+                group_by(site) %>%
+                summarize(N=n(),CPUE.mean=mean(CPUE))
+dat.summary
+```
+
+----
+\vspace{-12pt}
+# ANOVA
+\vspace{-12pt}
+#### Check assumptions
+\vspace{-12pt}
+```{r}
+# Is each group normally distributed?
+par(mfrow = c(2,2), mar=c(2, 4, 1, 1) + 0.1)
+qqnorm(filter(dat,site=="B.Asuncion")$CPUE, main="B.Asuncion")
+qqline(filter(dat,site=="B.Asuncion")$CPUE)
+qqnorm(filter(dat,site=="Bocana")$CPUE, main="Bocana")
+qqline(filter(dat,site=="Bocana")$CPUE)
+qqnorm(filter(dat,site=="B.Tortugas")$CPUE, main="B.Tortugas")
+qqline(filter(dat,site=="B.Tortugas")$CPUE)
+qqnorm(filter(dat,site=="P.Abreojos")$CPUE, main="P.Abreojos")
+qqline(filter(dat,site=="P.Abreojos")$CPUE)
+```
+
+```{r}
+# Does each group have equal variance? (boxplot is good enough)
+boxplot(CPUE~site,data=dat)
+```
+
+\vspace{24pt}
+#### ANOVA Table and Test
+```{r}
+fit <- aov(CPUE~site,data=dat) # first create an 'aov' object
+class(fit)
+summary(fit)
+```
+
+\vspace{24pt}
+#### Multiple Comparisons (Tukey test)
+```{r}
+# Using base/'stats' package
+TukeyHSD(fit)
+```
+
+```{r}
+# Using 'multcomp' package
+fit.tukey <- glht(fit,mcp(site="Tukey"))
+summary(fit.tukey)
+```
+
+#### Show Tukey results on boxplot
+```{r}
+boxplot(CPUE~site,data=dat,xlab="Site",ylab="Catch/day (# fish)")
+letters <- cld(fit.tukey)$mcletters$Letters
+n.sites <- length(unique(dat$site))
+for(i in 1:n.sites) mtext(letters[i],side=3,at=i)
+```
+
+

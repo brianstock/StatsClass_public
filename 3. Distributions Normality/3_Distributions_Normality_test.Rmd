@@ -1,0 +1,313 @@
+---
+title: "Distributions in R"
+author: "Brian Stock"
+date: "March 21, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Where we're headed
+
+Common question: "The *XXXXXX* test assumes my data are *YYYYYY*-distributed. How do I know if my data are ok?"
+
+In order to answer this, we need to know more about distributions! This should be familiar from the [Cyclismo tutorial](http://www.cyclismo.org/tutorial/R/probability.html) you did before the workshop.
+
+## Advice
+
+Create a `.R` file to take notes as you follow along. Like Josh showed yesterday, you can use comments to explain what the code is doing. Then you can remember 1 year from now!
+
+```{r eval=FALSE}
+# Brian Stock
+# Yelapa Workshop
+# Day 3 -- 26.03.17
+# Distributions in R
+
+# -------------------------------------------------------------
+# Normal distribution
+# --------------------------------------------------------------
+# use 'dnorm' to plot the normal density function
+# create vector of x-values
+x <- seq(-1,10,by=0.2)
+# dnorm calculates density (y-values for each x-value)
+y <- dnorm(x,mean=5,sd=1)
+# type = 'b' plots BOTH points and lines
+plot(x,y,type="b")
+```
+
+## The Normal Distribution in R
+
+Enter `?Normal` to see how the normal distribution works in R. There are 4 functions:
+
+### `dnorm`
+
+`D` for **DENSITY** (probability density function). We can use this to calculate the y-values and plot the familiar normal density function:
+
+$f(x) = \frac{1}{\sigma\sqrt{2\pi}}e^{-\frac{(x-\mu)^2}{2\sigma^2}}$
+
+```{r}
+x <- seq(-1,10,by=0.2)
+print(x)
+y <- dnorm(x,mean=5,sd=1)
+print(y)
+plot(x,y,type="b")
+```
+
+#### Now you try:
+
+1. Plot a normal distribution with $\mu$ = -10 and $\sigma$ = 2.
+2. Reproduce this plot of the standard normal below:
+```{r echo=F}
+zscores <- seq(-3, 3, by = .1)
+dvalues <- dnorm(zscores)
+plot(zscores,dvalues,
+     type = "l",
+     main = "pdf of the Standard Normal",
+     xlab= "Z-score",
+     ylab= "DDDDensity") 
+```
+
+### `pnorm`
+
+`P` is for **PROBABILITY**. `pnorm(q)` calculates the area under the normal curve from x = $-\infty$ up to x = $q$. In other words, `pnorm(q)` = $Pr(x < q)$.
+
+Why would we use this? Statistical tests are all about calculating p-values.
+
+#### Ex1. Josh's monstruo
+Lynn studies white sea bass. She knows the true population mean length ($\mu$) = 1.05 m, and the true standard deviation ($\sigma$) = 0.2. Her friend Josh catches what he thinks is a MONSTRUO, 1.47 m long. What is the probability that a random white sea bass would be *larger* than Josh's?
+
+<img src="/home/brian/Dropbox/mexico_fisheries/whiteseabass.jpg" width="500px"/>
+
+First let's use `dnorm` to plot the length distribution of Lynn's white sea bass ($\mu$=1.05m, $\sigma$=0.2). Add Josh's monstruo (1.47m) as a red vertical line using `abline`:
+
+```{r}
+x <- seq(0.4, 1.7, by = .01)
+dvalues <- dnorm(x, mean=1.05, sd=0.2)
+plot(x,dvalues,
+     type = "l",
+     main = "Lynn's white sea bass lengths",
+     xlab= "Length (m)",
+     ylab= "Density")
+abline(v=1.47,col='red',lwd=4)
+```
+
+Now use `pnorm` to calculate the chance a random fish is larger than Josh's:
+```{r}
+pnorm(1.47, mean=1.05, sd=0.2)
+```
+
+Wait a second, that seems wrong... why? Look at `?pnorm`
+
+```{r}
+# pnorm default is to calculate the LOWER tail
+# If we want the UPPER tail, we need to put lower.tail = FALSE
+pnorm(1.47, mean=1.05, sd=0.2, lower.tail=FALSE)
+```
+
+#### Now you try:
+I am not a good fisherman... the fish I caught is only 0.92 m. From the same white sea bass population, what is the chance a random fish is *smaller* than mine?
+
+```{r}
+pnorm(0.92, mean=1.05, sd=0.2)
+```
+
+### `qnorm`
+`Q` stands for **QUANTILE**. It is the inverse of `pnorm`, so you can use it to answer the opposite questions.
+
+#### Ex. Josh's monstruo
+Earlier we saw that only 0.01786442 percent of white sea bass are larger than Josh's (so 0.9821356 quantile). We can use this and `qnorm` to see: what size fish is the 0.9821356 quantile? The answer should be 1.47m:
+```{r}
+qnorm(0.9821356, mean=1.05, sd=0.2)
+```
+
+#### Now you try:
+Sometimes we are interested in the 2.5% and 97.5% of a distribution, if we set our $\alpha$ = 0.05 and do a two-tailed test. What are the 2.5% and 97.5% lengths of Lynn's white sea bass population?
+```{r echo=F}
+qnorm(0.025, mean=1.05, sd=0.2)
+qnorm(0.975, mean=1.05, sd=0.2)
+```
+
+### `rnorm`
+`R` stands for **RANDOM**. We use it to generate random numbers that follow a distribution we specify.
+
+#### Ex1. Generate 1000 lengths from Lynn's white sea bass population:
+```{r}
+len <- rnorm(1000, mean=1.05, sd=0.2)
+# Check that we have 1000 lengths
+length(len)
+# Check that the mean is about 1.05
+mean(len)
+# Check that the sd is about 0.2
+sd(len)
+# Show these lengths with a histogram
+hist(len, breaks=12,xlab="Length (m)",main="1000 random fish lengths")
+```
+
+## Other distributions
+
+R includes many common distributions by default in the `stats` package. This is always loaded, so don't have to write `library(stats)` like you do for optional packages.
+
+Let's see a list of distributions. **Enter:**
+```{r}
+?distributions
+```
+
+### Poisson
+Common distribution to model the number of individuals, arrivals, events, counts, etc., in a given time/space/unit of counting effort if each event is independent of all the others.
+
+#### Ex. You survey a location for the number of mantas you see in 2 hours. You think each manta sighting is independent. If the true mean density (# of mantas seen per 2 hours) is 8, plot the probability density function of seeing between 0 and 20 mantas.
+```{r}
+x <- 0:20
+dvals <- dpois(x,lambda=8)
+plot(x,dvals,type='l')
+```
+
+You see 5 mantas in your 2-hour survey, less than the mean (= 8). Unlucky!
+
+```{r echo=FALSE}
+plot(x,dvals,type='l')
+abline(v=5,col='red',lwd=4)
+```
+
+What is the probability any random 2-hour survey would see **more** than you did?
+
+```{r}
+ppois(5,lambda=8,lower.tail=FALSE)
+```
+
+### Uniform
+```{r}
+x <- runif(10000, min=1, max = 3)
+hist(x)
+```
+
+### Binomial
+The number of 'successes' in `size` trials, where `prob` is the probability of success for each trial. If each data point can take *one of two possible values* (male/female, mature/immature, alive/dead), think binomial.
+
+#### Ex. You're studying the sex ratio of a fishery, and you sample 35 fish from a boat. The true proportion of females is 0.40.
+What is the probability you find less than 10 females?
+```{r}
+pbinom(10,size=35,prob=0.4)
+```
+What is the probability you find more than 20 females?
+```{r}
+pbinom(20,size=35,prob=0.4,lower.tail=FALSE)
+```
+
+### Multinomial
+An extension to the binomial, if each data point has *more than 2 possible values*. Common in fisheries, since we often round fish ages to whole years (e.g. each fish could be age 1, 2, 3, 4, or 5+), or bin lengths (e.g. fish in 4 bins: 0-50 cm, 50-100 cm, 100-150 cm, 150+ cm).
+
+#### Ex. Sardines are usually caught between age 2-7. If the true population proportions of ages 2-7 are (.1, .1, .35, .2, .15, .1), what is the probability your sample of 100 fish is (8, 11, 32, 19, 18, 12)?
+```{r}
+dmultinom(c(8, 11, 32, 19, 18, 12),prob=c(.1, .1, .35, .2, .15, .1))
+```
+
+## How do I tell if my data are normal?
+
+1. Previous data/theory
+2. Histograms
+3. Quantile plots
+4. Shapiro-Wilk test
+5. K-S test?
+
+### 1. Previous data / theory
+With experience, you will be able to guess when data should or should not be normally distributed.
+
+#### Ex. Think of one example where you would NOT expect normal data.
+#### Ex. Think of one example where you WOULD expect normal data.
+
+### 2. Histograms
+Visual inspection of a histogram is the next step. For example, look at the histogram below (from your test!). Why is the distribution NOT normal?
+
+```{r echo=FALSE}
+hist(c(rnorm(10000,0,1),rnorm(10000,10,8)), main="", xlab="")
+```
+
+#### (5 min) Ex. Run the R code to plot the 4 distributions below. For each, write 2 reasons why the distribution IS or IS NOT normal.
+
+```{r eval=FALSE}
+hist(rpois(10000,3), main="", xlab="")
+hist(rnorm(10000,0,3), main="", xlab="")
+hist(c(rgamma(10000,3,2),runif(1000,3,8)), main="", xlab="")
+hist(c(rbinom(1000,10,.9)), main="", xlab="")
+```
+
+```{r echo=FALSE}
+hist(rpois(10000,3), main="", xlab="")
+hist(rnorm(10000,0,3), main="", xlab="")
+hist(c(rgamma(10000,3,2),runif(1000,3,8)), main="", xlab="")
+hist(c(rbinom(1000,10,.9)), main="", xlab="")
+```
+
+### 3. QQ plot
+A better way is to look at a quantile-quantile (QQ) plot, a visual way to see if your data match the normal distribution (or any other). Let's take the first histogram above:
+
+```{r}
+# Make fake data y
+y <- c(rnorm(1000,0,1),rnorm(1000,10,8))
+N <- length(y)
+# Show histogram
+hist(y)
+```
+
+Now the steps to make a QQ plot:
+
+```{r}
+# 1. Sort your data
+y.sorted <- sort(y)
+head(sort(y.sorted))
+tail(sort(y.sorted))
+# 2. Generate a random sample of the same size from a normal distribution
+rand <- rnorm(N)
+# 3. Sort the random sample
+rand.sorted <- sort(rand)
+# 4. Plot the normal on the x-axis, and your data on the y-axis
+plot(rand.sorted,y.sorted,xlab="Normal Quantiles",ylab="y Quantiles")
+# 5. Add a line through the 1st and 3rd quartiles
+qy <- quantile(y,c(.25,.75))
+qrand <- quantile(rand,c(.25,.75))
+abline(lm(qy~qrand))
+```
+
+R has functions to do this for you easily: `qqnorm` and `qqline`.
+```{r}
+qqnorm(y)
+qqline(y)
+```
+
+If our data is normally distributed, the points will be on the line. Because the points deviate from the line, our data is not normally distributed (like we saw in the histogram!).
+
+Now let's try with data that IS normally distributed:
+```{r}
+z <- rnorm(1000)
+qqnorm(z)
+qqline(z)
+```
+
+### 4. Shapiro-Wilk test
+There is a formal hypothesis-based test for normality, the Shapiro-Wilk test. However, there are good reasons NOT to use it. If curious, see [here](http://stackoverflow.com/questions/7781798/seeing-if-data-is-normally-distributed-in-r/7788452#7788452).
+
+The Shapiro-Wilk tests the hypotheses:
+
+$H_0$: your data are normal
+
+$H_a$: your data are NOT normal
+
+If the p-value is below our $\alpha$ level (typically $\alpha=0.05$), we reject the null and conclude our data are not normal.
+
+```{r}
+shapiro.test(y)
+```
+
+The p-value is much less than 0.05, so we conclude the data is not normal (like we concluded from the histogram and QQ plot).
+
+Now test the dataset we KNOW is normal:
+
+```{r}
+shapiro.test(z)
+```
+
+The p-value is much greater than 0.05, so we fail to reject the null. There is no evidence that our data are not normal (like we concluded from the histogram and QQ plot).
+

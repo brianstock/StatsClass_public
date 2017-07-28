@@ -1,0 +1,402 @@
+---
+title: "R Data Wrangling"
+author: "Brian Stock"
+date: "March 28, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = '/home/brian/Documents/Workshops/Mexico fisheries/StatsClass')
+```
+
+Unfortunately you will often need to "clean" or "wrangle" data before you can do an analysis. Let's practice!
+
+We will look at the U.S. West Coast Annual Bottom Trawl Survey dataset. This is a large, important fishery-independent dataset used to assess fish stocks in the U.S.:
+
+https://data.noaa.gov/dataset/west-coast-groundfish-bottom-trawl-survey-data-annual-west-coast-time-series-groundfish-trawl-
+https://www.nwfsc.noaa.gov/research/divisions/fram/groundfish/bottom_trawl.cfm
+
+<img src="/home/brian/Documents/Workshops/Mexico fisheries/StatsClass/trawl.png" width="300px"/>
+<img src="/home/brian/Documents/Workshops/Mexico fisheries/StatsClass/trawl_sample.jpg" width="300px"/>
+
+<img src="/home/brian/Documents/Workshops/Mexico fisheries/StatsClass/trawl_net.jpeg" width="300px"/>
+<img src="/home/brian/Documents/Workshops/Mexico fisheries/StatsClass/westcoastsurvey.png" width="280px"/>
+
+## Our goal
+We want to look at the catch of 3 species:
+
+1. What percent of hauls have > 0 catch for each species?
+2. Plot the distribution of catches for each species
+3. Has catch of each species changed over time?
+4. Are catches of the 3 species correlated?
+
+<img src="/home/brian/Documents/Workshops/Mexico fisheries/StatsClass/wcgop_species.png" width="700px"/>
+
+In order to answer our questions, we need to create a clean data frame that looks like:
+
+<img src="/home/brian/Documents/Workshops/Mexico fisheries/StatsClass/data_goal.png" width="900px"/>
+
+----
+
+## What data do we have?
+We have two separate data files:
+
+- HAUL: information about each time the net went in the water (e.g. time/lat/long in/out, depth, etc.)
+- FISH: information about which species and how much of each were caught in each haul
+
+```{r eval=FALSE, echo=TRUE}
+# set working directory to workshop folder with data files
+setwd("/home/brian/Documents/Workshops/Mexico fisheries/StatsClass")
+# check folder contents
+list.files()
+# load haul dataset
+HAUL <- read.csv("wcann_haul.csv",header=TRUE)
+# load fish dataset
+FISH <- read.csv("wcann_fish.csv",header=TRUE)
+```
+
+```{r eval=TRUE, echo=FALSE}
+list.files()
+HAUL <- read.csv("wcann_haul.csv",header=TRUE)
+FISH <- read.csv("wcann_fish.csv",header=TRUE)
+```
+
+## Explore `HAUL`
+```{r}
+dim(HAUL)
+names(HAUL)
+# 'Trawl.Id' is the trawl number.
+# For some reason the dataset is duplicated
+length(unique(HAUL$Trawl.Id))
+# See that 1 = 6454, 2 = 6455, ...
+HAUL$Trawl.Id[1]==HAUL$Trawl.Id[6454]
+HAUL$Trawl.Id[2]==HAUL$Trawl.Id[6455]
+# So only keep the first half of the rows
+hauls <- unique(HAUL$Trawl.Id)
+n.hauls <- length(hauls)
+HAUL <- HAUL[1:n.hauls,]
+dim(HAUL)
+```
+
+#### How many vessels have been used in the survey?
+#### Which vessel has done the most hauls?
+```{r}
+table(HAUL$Vessel)
+```
+
+#### When was the earliest and latest haul done?
+```{r}
+sort(HAUL$Trawl.Date)[1]
+sort(HAUL$Trawl.Date,decreasing=TRUE)[1]
+```
+
+#### What depth is a normal haul at?
+```{r}
+hist(HAUL$Best.Depth..m.,xlab="Depth (m)",main="")
+```
+
+## Explore `FISH`
+```{r}
+dim(FISH)
+names(FISH)
+head(FISH)
+```
+
+## Combine `HAUL` and `FISH`
+Want to get data frame `dat` where each row is a unique haul, with the following columns:
+
+- HAUL_ID: HAUL$Trawl.Id
+- YEAR: have to calculate from DATE
+- DATE: HAUL$Trawl.Date
+- TIME: HAUL$Trawl.Start.Time
+- LAT: latitude, HAUL$Best.Latitude..dd.
+- LON: longitude, HAUL$Best.Longitude..dd.
+- DEPTH: HAUL$Best.Depth..m.
+- TEMP: bottom temperature (at gear), HAUL$Temperature.At.the.Gear..degs.C.
+- DBRK: darkblotched rockfish catch in kg (FISH$Species=="Sebastes crameri")
+- PHLB: Pacific halibut catch in kg (FISH$Species=="Hippoglossus stenolepis")
+- YEYE: yelloweye rockfish catch in kg (FISH$Species=="Sebastes ruberrimus")
+
+```{r}
+# Create empty data frame where each row will be a unique haul
+cols <- c("HAUL_ID","YEAR","DATE","TIME","LAT","LON","DEPTH","TEMP","DBRK","PHLB","YEYE")
+dat <- matrix(NA, nrow=n.hauls, ncol=length(cols))
+dat <- as.data.frame(dat)
+names(dat) <- cols
+head(dat)
+```
+
+```{r}
+# Fill in easy columns that are already calculated by haul
+dat$HAUL_ID <- HAUL$Trawl.Id
+dat$LAT <- HAUL$Best.Latitude..dd.
+dat$LON <- HAUL$Best.Longitude..dd.
+dat$DEPTH <- HAUL$Best.Depth..m.
+dat$TEMP <- HAUL$Temperature.At.the.Gear..degs.C.
+```
+
+## Dates and times in R
+Dates and times can be a little tricky in R. Let's explore.
+```{r}
+today <- Sys.Date() # get today's date
+print(today)
+format(today, format="%B %d %Y") # show in different format
+```
+
+<img src="/home/brian/Documents/Workshops/Mexico fisheries/StatsClass/dateformat.png" width="500px"/>
+
+How are the dates coded in `HAUL`?
+```{r}
+class(HAUL$Trawl.Date)
+head(HAUL$Trawl.Date)
+```
+
+We need to convert from a `factor` to a `date`. To do this, we need to tell R what format it is currently
+
+```{r}
+dat$DATE <- as.Date(HAUL$Trawl.Date,format = "%m/%d/%y")
+head(dat$DATE)
+```
+
+Now that we know how to format date objects, we can extract the year from `dat$DATE` to put into `dat$YEAR`:
+```{r}
+dat$YEAR <- as.numeric(format(dat$DATE,"%Y"))
+head(dat$YEAR)
+```
+
+And we can see how many hauls were done each year:
+```{r}
+table(dat$YEAR)
+```
+
+Times are a bit trickier, we need a new function `as.POSIXct`. For the format codes, see `?strptime`.
+
+How is time currently formatted?
+```{r}
+head(HAUL$Trawl.Start.Time)
+head(as.character(HAUL$Trawl.Start.Time))
+```
+
+Then convert to class `POSIXct`:
+```{r}
+dat$TIME <- as.POSIXct(as.character(HAUL$Trawl.Start.Time), format = "%m/%d/%y %H:%M", tz="US/Pacific")
+attr(dat$TIME, "tzone") <- "US/Pacific"
+class(dat$TIME)
+```
+
+Excellent work! We now only need to add the fish catch columns. Perhaps time for a break... stretch!
+
+<img src="/home/brian/Documents/Workshops/Mexico fisheries/StatsClass/stretch.jpeg" width="500px"/>
+----
+## *If/else* in R
+
+*If* statements are useful to tell R to do something only *if* a condition is true. *Else* will tell R to do if that condition is false.
+
+A simple example:
+```{r}
+x <- 1
+if(x < 2){
+  x <- x + 10
+}
+print(x)
+```
+
+See that if `x > 2`, we do not add 10:
+```{r}
+x <- 5
+if(x < 2){
+  x <- x + 10
+}
+print(x)
+```
+
+Use *else* to tell R to do something if the condition is FALSE:
+```{r}
+x <- 5
+if(x < 2){
+  x <- x + 10
+} else{
+  cat("nope... x is NOT < 2")
+}
+```
+
+## *For* loops in R
+
+Computers are good at repeating things. The *for* loop can be used to repeat a set of instructions so you don't have to copy and paste the same code.
+
+```{r}
+for(i in 1:5){
+  print(x + i)
+}
+```
+
+You can put a for loop inside another for loop. For example, can go through each entry in a matrix:
+```{r}
+M <- matrix(1:12, nrow=4, ncol=3)
+M
+for(r in 1:4){
+  for(c in 1:3){
+    print(paste0("Row ", r, ", Col ", c, ": ", M[r, c]))
+  }
+}
+```
+
+
+## Combine `HAUL` and `FISH`
+Now we know about *if* and *for*, we can fill in `dat` row-by-row with the catch of each species in each haul.
+
+```{r}
+# See what DBRK, PHLB, and YEYE look like
+head(dat$DBRK)
+head(dat$PHLB)
+head(dat$YEYE)
+# Turn them all into 0 instead of NA
+dat$DBRK <- 0
+dat$PHLB <- 0
+dat$YEYE <- 0
+head(dat$DBRK)
+```
+
+
+Before running a big *for* loop, I first test that it works by setting `i = 1`. Let's go line by line:
+```{r results='hide', warning=FALSE, message=FALSE}
+library(dplyr)
+```
+```{r}
+i = 3
+dat$HAUL_ID[i]
+cur_haul <- filter(FISH,Trawl.Id==dat$HAUL_ID[i])
+dim(cur_haul)
+dim(cur_haul)[1] # get number of rows in ith haul
+cur_haul # get rows of FISH (species caught) in the ith haul
+cur_haul$Species # species names only from ith haul
+# %in% returns TRUE/FALSE: was yelloweye caught in ith haul?
+"Sebastes ruberrimus" %in% cur_haul$Species # YEYE
+"Sebastes crameri" %in% cur_haul$Species # DBRK
+"Hippoglossus stenolepis" %in% cur_haul$Species # PHLB
+# filter to only get DBRK row
+filter(cur_haul,Species=="Sebastes crameri")
+# get only the catch in kg
+filter(cur_haul,Species=="Sebastes crameri")$Haul.Weight..kg.
+```
+
+```{r}
+# Now get the catch for each species for each haul
+for(i in 1:n.hauls){
+	cur_haul <- filter(FISH,Trawl.Id==dat$HAUL_ID[i])
+	if("Sebastes ruberrimus" %in% cur_haul$Species) dat$YEYE[i] <- filter(cur_haul,Species=="Sebastes ruberrimus")$Haul.Weight..kg.
+	if("Sebastes crameri" %in% cur_haul$Species) dat$DBRK[i] <- filter(cur_haul,Species=="Sebastes crameri")$Haul.Weight..kg.
+	if("Hippoglossus stenolepis" %in% cur_haul$Species) dat$PHLB[i] <- filter(cur_haul,Species=="Hippoglossus stenolepis")$Haul.Weight..kg.
+}
+```
+
+Check that it worked:
+```{r}
+head(dat$DBRK)
+hist(dat$DBRK, breaks=100)
+# Plot only positive values
+pos.rows <- which(dat$DBRK > 0)
+hist(dat$DBRK[pos.rows], breaks=100)
+# Extreme right skew. Log transform
+hist(log(dat$DBRK[pos.rows]), breaks=100, main="DBRK")
+```
+
+Now we can answer our questions! Use for loops to do the calculations for all species at once.
+```{r}
+# 1. What percent of hauls have > 0 catch for each species?
+species.names <- c("DBRK","PHLB","YEYE")
+n.species <- length(species.names)
+n.species
+p.catch <- rep(NA,n.species) # store percent catch > 0 for all 3 species
+p.catch
+for(sp in 1:n.species){
+  species.names[sp] # get the next species name
+  pos.rows <- which(dat[,species.names[sp]] > 0) # which hauls > 0 for that species
+  length(pos.rows) # how many hauls > 0 for that species
+  n.hauls # total number of hauls
+  p.catch[sp] <- length(pos.rows)/n.hauls
+}
+species.names
+round(p.catch,3)
+```
+
+## Your turn! You can work together or individually.
+Use for loops to answer our questions 2-5 for all 3 species. *(Hint)* Open a new plot without erasing the last plot using `dev.new()`.
+
+2. Plot a histogram of *positive* catch for each species (log transform).
+3. Plot the time-series of *catch per year* for each species.
+4. Plot the time-series of *proportion positive catch* for each species.
+5. Identify the haul with the largest catch for each species.
+
+### 2. Histogram of positive catch
+```{r echo=FALSE, eval=TRUE}
+for(sp in 1:n.species){
+  pos.rows <- which(dat[,species.names[sp]] > 0) # which hauls > 0 for that species
+  hist(log(dat[pos.rows, species.names[sp]]), breaks=100, main=species.names[sp])
+}
+```
+
+### 3. Time-series of *catch* per year
+```{r echo=FALSE, eval=TRUE}
+years <- unique(dat$YEAR)
+n.years <- length(years)
+cols <- c("YEAR","DBRK","PHLB","YEYE")
+catch.by.year <- matrix(NA, nrow=n.years, ncol=length(cols))
+catch.by.year <- as.data.frame(catch.by.year)
+names(catch.by.year) <- cols
+catch.by.year$YEAR <- years
+for(yr in 1:n.years){
+  cur_year <- filter(dat,YEAR==years[yr])
+  for(sp in 1:n.species){
+    catch.by.year[yr, species.names[sp]] <- sum(cur_year[, species.names[sp]])
+  }
+}
+# Now plot each time-series
+for(sp in 1:n.species){
+  plot(catch.by.year$YEAR, catch.by.year[, species.names[sp]],
+       main = species.names[sp],
+       type = "b",
+       xlab = "Year",
+       ylab = "Catch")
+}
+```
+
+### 4. Time-series of *proportion positive catch* by year
+```{r echo=FALSE, eval=TRUE}
+ppc.by.year <- matrix(NA, nrow=n.years, ncol=length(cols))
+ppc.by.year <- as.data.frame(catch.by.year)
+names(ppc.by.year) <- cols
+ppc.by.year$YEAR <- years
+for(yr in 1:n.years){
+  cur_year <- filter(dat,YEAR==years[yr])
+  n.hauls.yr <- dim(cur_year)[1]
+  for(sp in 1:n.species){
+    pos.rows <- which(cur_year[, species.names[sp]] > 0)
+    ppc.by.year[yr, species.names[sp]] <- length(pos.rows)/n.hauls.yr
+  }
+}
+# Now plot each time-series
+for(sp in 1:n.species){
+  plot(ppc.by.year$YEAR, ppc.by.year[, species.names[sp]],
+       main = species.names[sp],
+       type = "b",
+       xlab = "Year",
+       ylab = "Proportion hauls with positive catch")
+}
+```
+
+### 5. Haul with largest catch
+```{r echo=FALSE, eval=TRUE}
+max.catch <- rep(NA, n.species)
+max.catch.haul <- rep(NA, n.species)
+for(sp in 1:n.species){
+  max.catch[sp] <- max(dat[, species.names[sp]])
+  max.catch.haul[sp] <- which(dat[, species.names[sp]] == max.catch[sp])
+}
+species.names
+max.catch
+max.catch.haul
+#
+```
+

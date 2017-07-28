@@ -1,0 +1,113 @@
+---
+title: "GLM Homework"
+author: "Josh Stewart"
+date: "3/29/2017"
+output: html_document
+---
+
+## The Data:
+SEMARNAT has decided to create a new marine protected area to reduce harvest pressure on lobsters in Punta de Mita. They have hired you to determine how far offshore the boundaries of the MPA should extend. To answer this question, you conducted transects from the beach to 75m offshore, and at random intervals you recorded the presence or absence of lobsters. 
+
+```{r In-Class Example,echo=F}
+
+set.seed(123)
+Distance<-runif(200,0,75)
+LobsterProb<-plogis(2-0.085*Distance)
+
+#plot(x=Distance,y=LobsterProb,pch=19)
+
+observations<-rbinom(200,1,LobsterProb)
+
+#plot(Distance,observations,pch=19)
+
+LobsterData<-data.frame(observations,Distance)
+
+write.csv(LobsterData,"LobsterData.csv",row.names=F)
+
+#LobsterData<-read.csv("LobsterData.csv")
+
+```
+
+```{r In Class Example}
+head(LobsterData)
+```
+
+### 1. Plot your data
+Read in your data from LobsterData.csv and plot it.
+
+
+### 2. Analyze your data
+Use a logistic regression (binomial GLM) to evaluate the relationship between distance from shore and the presence of lobsters.
+
+Is there a significant relationship between distance from shore and lobster presence? Explain your conclusions. Report your summary table, and add the probability curve of lobster presence to your plot.
+
+Bonus points: Add confidence intervals to your probability curve (not required)
+
+
+```{r Lobster Solution, echo=F}
+
+LobsterGLM<-glm(observations~Distance,family=binomial(link='logit'),data=LobsterData)
+#summary(LobsterGLM)
+
+```
+
+```{r Lobster Plot, echo = F, eval=F}
+
+GLM_y<-LobsterData$Distance*coef(LobsterGLM)[2]+coef(LobsterGLM)[1]
+
+
+plot(x=LobsterData$Distance,y=LobsterData$observations,pch=19)
+lines(x=sort(LobsterData$Distance),y=sort(plogis(GLM_y),decreasing=T),pch=19,col="red")
+
+```
+
+### 3. Where should the boundary go?
+Find and report the distance from shore at which the probability of finding a lobster drops to 10%
+
+
+
+
+
+
+
+```{r Lobster Answer,echo=F, eval=F}
+
+set.seed(123)
+Distance<-runif(200,0,75)
+LobsterProb<-plogis(2-0.085*Distance)
+
+#plot(x=Distance,y=LobsterProb,pch=19)
+
+observations<-rbinom(200,1,LobsterProb)
+
+#plot(Distance,observations,pch=19)
+
+LobsterData<-data.frame(observations,Distance)
+
+write.csv(LobsterData,"LobsterData.csv",row.names=F)
+
+```
+
+```{r Lobster data, echo=F, eval=F}
+LobsterData<-read.csv("LobsterData.csv")
+head(LobsterData)
+```
+
+
+
+```{r Lobster GLM, echo=F, eval=F}
+
+LobsterGLM<-glm(observations~Distance,family=binomial(link='logit'),data=LobsterData)
+summary(LobsterGLM)
+
+```
+
+```{r Lobster plot, echo=F, eval=F}
+
+GLM_y<-LobsterData$Distance*coef(LobsterGLM)[2]+coef(LobsterGLM)[1]
+
+
+plot(x=LobsterData$Distance,y=LobsterData$observations,pch=19)
+lines(x=sort(LobsterData$Distance),y=sort(plogis(GLM_y),decreasing=T),pch=19,col="red")
+
+```

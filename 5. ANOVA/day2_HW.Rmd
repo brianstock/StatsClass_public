@@ -1,0 +1,50 @@
+---
+title: "Day 2 HW: t-test & ANOVA"
+output:
+  pdf_document: default
+  html_document: default
+date: "March 26, 2017"
+---
+
+```{r eval=FALSE, echo=FALSE}
+# Make data for problem 1
+library(FSAdata)
+library(tidyr)
+data("LobsterHI")
+dat <- LobsterHI
+dat <- dat[,c("day","legal","sublegal","berried")]
+dat <- gather(dat, key=status, value=catch, legal, sublegal, berried)
+write.csv(dat,"/home/brian/Documents/Workshops/Mexico fisheries/StatsClass/lobsterHI.csv",row.names=FALSE)
+
+# Make data for problem 2
+data("BullTroutRML1")
+dat <- BullTroutRML1
+write.csv(dat,"/home/brian/Documents/Workshops/Mexico fisheries/StatsClass/BullTrout.csv",row.names=FALSE)
+```
+
+
+## Exercise 1
+In a lobster fishery, you collect catch data according to 3 categories:
+
+- sublegal (too small to keep)
+- legal (big enough to keep)
+- berried (female with eggs)
+
+1. Read in the data from `lobsterHI.csv`
+2. Make a boxplot of `catch` by category (`status`)
+3. Decide which test to use to look for differences in catch by category (t-test or ANOVA).
+4. Are the assumptions for your test ok?
+5. Conduct the test.
+6. What is your conclusion?
+
+----
+## Exercise 2
+You sample fish in 2 time periods (1977-79 and 2001) and want to know if the fish are smaller or larger.
+
+1. Read in the data from `BullTrout.csv`
+2. Make a boxplot of `mass` by time period (`era`)
+3. Decide which test to use to look for differences in `mass` by `era` (t-test or ANOVA).
+4. Are the assumptions for your test ok?
+5. Conduct the test.
+6. What is your conclusion?
+

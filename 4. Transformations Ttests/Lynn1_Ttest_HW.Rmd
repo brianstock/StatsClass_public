@@ -1,0 +1,145 @@
+---
+title: "HW- T-tests and Interpret P-values"
+author: "Yelapa Statistics Course"
+date: "March 27, 2017"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# Created by Lynn Waterhouse
+```
+
+# Homework
+Please write your answers in a word document. All of the below word problems involve t-tests. For each problem:
+
+1. Say what type of test it is. 
+  * One sample, Two sample, Paired
+  * One sided, Two sided
+  * If two sample: equal variances or unequal variances
+
+2. List any assumptions of the test.
+
+3. Write out the hypotheses (null and alternative)
+
+4. Write down the p-value compared to the critical value (alpha=0.05). Do you reject or fail to reject the null hypothesis?
+
+5. Write down your conclusions from the result of the test.
+
+## Problem 1.
+Josh is a cookie addict. He loved oreo cookies. He is worried that the company who makes oreos is ripping him off. The bags of oreos that he likes to buy say they contain 435g of oreos in them. He buys 50 bags to verify this. The results are shown below.
+
+```{r pressure, echo=FALSE}
+set.seed(3)
+oreo<-rt(50,df=49,ncp=433.2)
+shapiro.test(oreo)
+t.test(oreo,alternative="less",mu=435)
+
+#(1) This is a one sided, one sample t-test
+#(2) assumption of independent data samples, data are normally distributed
+#    from shapiro.test we fail to reject the null that the data are normal (so 
+#    assumptions are met)
+#(3) Null- Mean is >=435 g
+#    Alternative- Mean is < 435g
+#(4) p-value = 0.9309. We fail to reject the null in favor of the alternative.
+#(5) We are unable to find that the weights of the bags Josh bought have a  statistically significant lower weight than the posted weight.
+```
+
+## Problem 2.
+We measured the microbial concentration in the guts of captive mobulas. We have 40 captive mobulas that were all born in captivity. We measured the gut microbial concentration when they are 6 weeks old, and then after 2 years.  We are curious if younger or older mobulas have more microbes in their guts.  
+
+After running the test you find out the p-value is p-value = 0.00253.
+
+```{r, echo=FALSE, eval=FALSE}
+set.seed(2)
+m1<-rt(40,df=39, ncp=56)
+m2<-rt(40,df=39, ncp=62)
+t.test(x=m1,y=m2,paired=TRUE)
+#(1) This is a two sided, paired t-test
+#(2) assumption of independent data samples, differences are normally distributed
+#(3) Null- difference = 0
+#    Alternative- difference is not equal 0
+#(4) p-value = 0.00253. We reject the null in favor of the alternative.
+#(5) We conclude that there is a statistically significant difference between the manta gut microbiome concentration at age 6 weeks and age 2 years.
+```
+
+## Problem 3.
+We go to 2 fish markets - San Diego and Tijuana. We measure the weights of adult white seabass caught in both markets. We sample 300 fish from each market. We are curious if San Diego fish weigh more than Tijuana Fish. The fish weights are all given in kg.
+
+```{r, echo=FALSE, fig.width=3, fig.height=3}
+set.seed(2)
+SDfish<-round(rt(300,df=299,ncp=20.2))
+TJfish<-round(rt(300,df=299,ncp=19.4))
+hist(SDfish, xlab="weight(kg)")
+hist(TJfish, xlab="weight(kg)")
+
+var.test(SDfish,TJfish)
+
+t.test(x=SDfish,y=TJfish,alternative="greater", var.equal=TRUE)
+
+#(1) This is a one sided, two sample t-test with homogeneous variances
+#(2) assumption of independent data samples, both datasets are normally distributed
+#(3) Null- SD WSB weight <= TJ WSB weight
+#    Alternative- SD WSB weight > TJ WSB weight
+#(4) p-value = 3.84e-13. We reject the null in favor of the alternative.
+#(5) We conclude that the WSB caught and sold in markets in San Diego weigh a 
+#   statistically significant amount more than the WSB caught and sold in markets 
+#   in Tijuana.
+```
+
+## Problem 4.
+Josh and Brian have both decided to become abalone farmers. Josh brags that he sells a larger weight of abalone in market than Brian on average. We want to find out if he is right. We sample 43 abalone that each of them sell in market. Weights are given in g.
+
+```{r, echo=FALSE, fig.width=3, fig.height=3}
+set.seed(2)
+Josh.ab<-rnorm(43,232,10)*runif(43,.98,1)
+Brian.ab<-rnorm(43,231,20)*runif(43,.97,.99)
+
+hist(Josh.ab,xlab="weight(g)",main="Weight of Josh's Abalone")
+hist(Brian.ab,xlab="weight(g)",main="Weight of Brian's Abalone")
+
+qqnorm(Josh.ab, main="Normal QQPlot for \nJosh's Abalone")
+qqline(Josh.ab)
+
+qqnorm(Brian.ab, main="Normal QQPlot for \nBrian's Abalone")
+qqline(Brian.ab)
+
+var.test(Brian.ab,Josh.ab)
+
+t.test(Josh.ab,Brian.ab,var.equal=FALSE,alternative="greater")
+
+#(1) This is a one sided, two sample t-test with non-homogeneous variances
+#(2) assumption of independent data samples, both datasets are normally distributed
+#(3) Null- Josh Abalone weight  <= Brian Abalone weight 
+#    Alternative- Josh Abalone weight > Brian Abalone weight 
+#(4) p-value = 0.2598. We failto reject the null.
+#(5) We conclude that we are unable to tell if the Abalone Josh sells weigh a 
+#   statistically significant amount more than the Abalone Brian sells
+```
+## Problem 5.
+Lynn likes to eat Snickers candy bars. The snicker bar says it weighs 75g. Lynn is worried that the manufacturer is lying and providing consumers with less candy bar. She goes out and buys 40 snickers bars. She does the test and gets a p-value of 0.995.
+
+## Problem 6.
+Brian measures the lengths of adult Nassau Grouper at a spawning aggregation each year. He is curious if the average length (mm) has increased with time. He compares lengths from 2011 to 2014. He gets a p-value of 0.049999.
+
+## Problem 7.
+Daniel is curious if fishermen are catching the same size of mobulas as they used to in Sri Lanka. In 2012 he sampled the disc width of 100 mobulas. In 2015 he sampled the disc width of another 100 mobuals. He got a p-value of 0.04.
+
+## Problem 8.
+We are interested in if it is getting warmer in Yelapa. We compare the average daily temperature (deg C) during the month of July from 1900-1950 to the average daily temperature 1965-2015.  The variances are equal. The p-value is 0.02.
+
+## Problem 9.
+We are interested in comparing the weights of mangoes sold in Walmart to those sold at a farmer's fruit stand. We want to know if we would get heavier mangoes by going to the famer's fruit stand. The p-value is 0.034.
+
+## Problem 10.
+A salmon farmer is testing out a new feed for their salmon. They have 2 types of feed. They feed 100 animals FEEDXX and see how much weight they gain. They feed 100 animals the standard feed, FEED01, and see how much weight they gain. They want to know if they should switch to FEEDXX from FEED01. The variances are not equal for weight gain in fish fed FEED01 and weight gain in fish fed FEEDXX.
+
+When they write their R-code they type:
+```{r, eval=F}
+t.test(FEED01,FEEDXX,var.equal=FALSE, alternative="greater")
+```
+The p-value is 0.079.  What hypotheses did they actually test? What hypotheses did they mean to test?
+
+What do they conclude from this test?
+
+How do they fix this code?

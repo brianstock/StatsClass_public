@@ -1,0 +1,152 @@
+---
+title: "Poisson GLM"
+date: "March 29, 2017"
+output: html_document
+---
+
+```{r eval=FALSE, echo=FALSE}
+# Generate data
+# survey data from 3 sites
+set.seed(100)
+sites <- c("costa", "bahia", "marietas")
+n.sites <- length(sites)
+N.vec <- round(rnorm(n.sites, mean=200, sd=10))
+true.dens <- c(6, 10, 6.5)
+mantas <- vector("list",n.sites)
+for(i in 1:n.sites) mantas[[i]] <- rpois(N.vec[i], lambda=true.dens[i])
+# lapply(mantas,mean)
+
+dat <- data.frame(site = rep(sites, N.vec),
+                  counts = unlist(mantas))
+write.csv(dat,"/home/brian/Documents/Workshops/Mexico fisheries/StatsClass/poissonGLM.csv",row.names=FALSE)
+```
+
+## Review: Poisson distribution
+Common distribution to model **count data**: the number of individuals, arrivals, events, etc., in a given time/space/unit of effort if each event is independent of all the others.
+
+#### Ex1. You survey a location for the number of mantas you see in 2 hours. You think each manta sighting is independent. If the true mean density (# of mantas seen per 2 hours) is 8, plot the probability density function of seeing between 0 and 20 mantas.
+```{r}
+x <- 0:20
+dvals <- dpois(x,lambda=8)
+plot(x,dvals,type='l')
+```
+
+You see 5 mantas in your 2-hour survey, less than the mean (= 8). Unlucky!
+
+```{r echo=FALSE}
+plot(x,dvals,type='l')
+abline(v=5,col='red',lwd=4)
+```
+
+What is the probability any random 2-hour survey would see **more** than you did?
+
+```{r}
+ppois(5,lambda=8,lower.tail=FALSE)
+```
+
+## Poisson GLM 
+If your response variable is count data, then a Poisson GLM is probably more appropriate than ANOVA or simple linear regression **because they assume your data is normally distributed**. In Ex1, we could use `dpois` and `ppois` because we knew the true density. We will never know the true density, and we will want to *estimate it using our count data*.
+
+#### Poisson GLM estimates density from count data (surveys)
+
+#### Ex2. Manta surveys by site.
+You conduct about 150 manta surveys in 3 locations. Each data point is the number of mantas you see in 2 hours. You want to know if the density of mantas is different by site.
+
+Looks like ANOVA (3 sites). Let's plot our data and then test ANOVA assumptions.
+```{r results='hide', warning=FALSE, message=FALSE}
+library(dplyr)
+library(multcomp)
+# read in data
+setwd("/home/brian/Documents/Workshops/Mexico fisheries/StatsClass")
+dat <- read.csv("poissonGLM.csv", header=TRUE)
+# look at data
+head(dat)
+names(dat)
+dim(dat)
+summary(dat)
+```
+
+```{r}
+# boxplot of counts by site
+boxplot(counts ~ site, data=dat,
+        xlab="Site",
+        ylab="Counts")
+```
+
+```{r}
+# plot each site's distribution of counts
+bahia <- filter(dat, site=="bahia")$counts
+costa <- filter(dat, site=="costa")$counts
+marietas <- filter(dat, site=="marietas")$counts
+
+hist(bahia)
+hist(costa)
+hist(marietas)
+```
+
+ANOVA assumes each site is normally distributed. Look at QQ plots:
+```{r}
+par(mfrow = c(2,2), mar=c(2, 4, 1, 1) + 0.1)
+qqnorm(bahia, main="bahia")
+qqline(bahia)
+qqnorm(costa, main="costa")
+qqline(costa)
+qqnorm(marietas, main="marietas")
+qqline(marietas)
+```
+
+2 problems with histograms / QQ plots:
+
+- discrete data ("steps")
+- "bahia" looks ok but "marietas" and "costa" skewed right
+
+#### Fit a Poisson GLM
+```{r}
+pois.mod <- glm(counts ~ site, data=dat, family=poisson)
+summary(pois.mod)
+```
+
+#### How do we interpret this?
+The GLM takes `bahia` as the mean, and has estimated deviations from `bahia` as the effects of `costa` and `marietas`.
+
+`sitecosta` has `Estimate` = `-0.50418` and `Pr(>|z|)` `<2e-16 ***`: The density of mantas on the costa is **significantly lower** than in bahia.
+
+`sitemarietas` has `Estimate` = `-0.44121` and `Pr(>|z|)` `<2e-16 ***`: The density of mantas at the marietas is **significantly lower** than in bahia.
+
+#### What if we want to test if there is a difference between Costa and Marietas?
+We can do a Tukey test on the GLM output just like we did with ANOVA output. Use the same `glht` function from the `multcomp` package:
+```{r}
+pois.tukey <- glht(pois.mod, mcp(site="Tukey"))
+summary(pois.tukey)
+```
+
+So our data do NOT show a difference between Costa and Marietas, but we do show Bahia has higher density of mantas than both Costa and Marietas.
+
+#### Calculate mean density for each site
+Do this by using the `predict` function with `type="response"`:
+```{r}
+newdata <- data.frame(site=c("bahia","costa","marietas"))
+predict(pois.mod, newdata, type="response")
+```
+
+#### Get 95% CI for density estimates by site
+```{r}
+pred <- predict(pois.mod, newdata, type="response", se.fit=TRUE)
+lwr <- pred$fit - 1.96*pred$se.fit
+upr <- pred$fit + 1.96*pred$se.fit
+```
+
+So our estimates of mean density and 95% CI are:
+
+- Bahia: 10.1 (9.6 -- 10.5)
+- Costa: 6.1 (5.7 -- 6.4)
+- Marietas: 6.5 (6.1 -- 6.8)
+
+#### The Poisson GLM fits better than ANOVA/normal (lower AIC)
+Also see that the Normal GLM is identical to an ANOVA in this case.
+```{r}
+aov.mod <- aov(counts ~ site, data=dat)
+norm.mod <- glm(counts ~ site, data=dat, family=gaussian)
+AIC(pois.mod, aov.mod, norm.mod)
+```
+

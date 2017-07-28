@@ -1,0 +1,84 @@
+---
+title: "Regression HW"
+date: "March 28, 2017"
+output: pdf_document
+---
+
+```{r eval=FALSE, echo=FALSE}
+# Answer key
+library(dplyr)    # for summarizing data
+# 1. read in data
+setwd("/home/brian/Documents/Workshops/Mexico fisheries/StatsClass")
+dat <- read.csv("BullTrout.csv",header=T)
+dat <- filter(dat, era=="1977-79")
+
+# 2. Plot length vs. weight
+plot(dat$fl, dat$mass, pch=19, xlab="Fork length (mm)", ylab="Weight (g)")
+
+# 3. residual plot
+mod1 <- lm(mass ~ fl, data=dat)
+plot(mod1, which=1) # method 2
+
+# 4. Transform the data and show that the linear regression assumptions are met for the transformed data.
+logmass <- log(dat$mass)
+logL <- log(dat$fl)
+mod2 <- lm(logmass ~ logL)
+plot(mod2, which=1) # method 2
+
+# 5. Fit the linear model. What are your conclusions?
+summary(mod2)
+# log(weight) is related to log(length)
+
+# 6. How much of the variance in *log(weight)* does your model explain?
+# 98.96 %
+
+#7. Plot your length-weight fit with a 95% prediction interval.
+minX <- min(dat$fl)
+maxX <- max(dat$fl)
+L <- seq(minX, maxX, length.out=500)
+W <- exp(predict(mod2, newdata=data.frame(logL=log(L)),
+                 interval="prediction"))
+plot(mass ~ fl, data=dat, pch=19, col="black",
+     xlab="Fork Length (mm)",
+     ylab="Mass (g)")
+lines(L, W[,"fit"], lwd=2, col="red")
+lines(L, W[,"lwr"], lwd=2, lty=2, col="red")
+lines(L, W[,"upr"], lwd=2, lty=2, col="red")
+
+# 8. Predict the mass of fish with fork length (`fl`) = 150, 250, and 310 mm. Show these predictions on your plot with blue points (*hint:* use `points` function with `pch=19, col="blue"`).
+x <- c(150, 250, 310)
+p1 <- predict(mod2, data.frame(logL=log(x)),
+              interval="prediction")
+exp(p1)
+# 150 mm --> 52.7 g
+# 250 mm --> 226.2 g
+# 310 mm --> 417.6 g
+points(x, exp(p1)[,1], pch=19, col="blue")
+```
+
+## Weight-length regression
+Weight-length relationships are important in fisheries. Some specific examples:
+
+1. estimating weights from lengths when it was not possible to record weight in the field
+2. converting growth in length to growth in weight
+3. estimating biomass of a fish community using only length and species data
+
+Weight-length is usually modeled with linear regression as:
+$W_i = \alpha L_i^{\beta} 10^{\epsilon_i}$
+
+Take the log of both sides:
+$log(W_i) = log(\alpha) + \beta log(L_i) + \epsilon_i$
+
+## Weight-length of Bull Trout
+Use the same Bull Trout dataset as from the ANOVA HW (`BullTrout.csv`). In your ANOVA HW, you found that the mass of Bull Trout was *different in the two different eras* (1977-79 vs. 2001), so we will only model era #1.
+
+1. Read in the data from `BullTrout.csv`. Remove the data from era #2 (2001) so that you only have era #1 data (1977-79).
+2. Plot length (`fl`, mm) vs weight (`mass`, g).
+3. Check the 2 assumptions of linear regression (`mass ~ fl`) using a residual plot.
+4. Transform the data and show that the linear regression assumptions are met for the transformed data.
+5. Fit the linear model. What are your conclusions?
+6. How much of the variance in *log(weight)* does your model explain?
+7. Plot your length-weight fit with a 95% prediction interval.
+8. Predict the mass of fish with fork length (`fl`) = 150, 250, and 310 mm. Show these predictions on your plot with blue points (*hint:* use `points` function with `pch=19, col="blue"`).
+
+

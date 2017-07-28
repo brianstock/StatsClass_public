@@ -1,0 +1,118 @@
+---
+title: "Linear regression"
+author: "Brian Stock"
+date: "March 27, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Weight-length relationships
+
+From Ch. 7 in *Introductory Fisheries Analyses with R* (2016) by Derek Ogle.
+
+Weight-length relationships are important in fisheries. Some specific examples how they are used in assessing fish stock status:
+
+1. estimating weights from lengths when it was not possible to record weight in the field
+2. converting growth in length to growth in weight
+3. estimating biomass of a fish community using only length and species data
+4. estimating fish condition factor
+5. comparing fish life history characteristics
+
+Weight-length relationships are most often modeled with simple linear regression.
+
+----
+
+## Get your data into R and look at it
+
+Walleye are a freshwater fish VERY popular in the north-central United States. Shoot, people even build huge statues of them! We will use some Walleye length-weight data from the `FSAdata` package:
+
+<img src="/home/brian/Documents/Workshops/Mexico fisheries/StatsClass/walleye_baitshop.JPG" width="400px"/>
+<img src="/home/brian/Documents/Workshops/Mexico fisheries/StatsClass/walleye_statue.jpg" width="400px"/>
+
+#### Load necessary packages
+```{r results='hide', warning=FALSE, message=FALSE}
+library(FSAdata)
+library(dplyr)
+```
+
+#### Load walleye length-weight data from `FSAdata`
+```{r}
+dat <- filter(WalleyeErie2,year==2014)
+head(dat)
+```
+
+#### Quick summaries
+```{r}
+summary(dat$tl) # tl = total length (mm)
+summary(dat$w) # w = weight (g)
+```
+
+#### Plot weight vs. length
+```{r}
+plot(w~tl,data=dat,pch=19,col="black",xlab="Total Length (mm)",ylab="Weight (g)")
+```
+
+## Linear regression assumption check
+
+#### Residual plot to check assumptions
+```{r}
+mod1 <- lm(w~tl,data=dat)
+par(mfrow = c(1,2))
+plot(fitted(mod1),residuals(mod1)) # method 1
+plot(mod1, which=1) # method 2
+```
+
+##### Model fails 2 assumptions:
+1. **Nonlinear** (curved pattern)
+2. **Variance is not constant** (large fish are more variable)
+
+#### Log-transform weight AND length
+Weight-length is usually modeled as:
+$W_i = \alpha L_i^{\beta} 10^{\epsilon_i}$
+
+Take the log of both sides:
+$log(W_i) = log(\alpha) + \beta log(L_i) + \epsilon_i$
+
+```{r}
+dat$logW <- log(dat$w)
+dat$logL <- log(dat$tl)
+```
+
+#### Residual plot looks much better with log-log transform
+```{r}
+par(mfrow = c(2,2), mar=c(4, 4, 0, 1) + 0.1)
+plot(w~tl,data=dat,pch=19,col="black",xlab="Total Length (mm)",ylab="Weight (g)")
+plot(mod1, which=1)
+plot(logW ~ logL, data=dat, pch=19,col="black",xlab="log Total Length (mm)",ylab="log Weight (g)")
+mod2 <- lm(logW ~ logL,data=dat)
+plot(mod2, which=1)
+```
+
+## Linear regression results
+```{r}
+summary(mod2)
+cbind(mean=coef(mod2),confint(mod2))
+```
+
+#### Making predictions
+```{r}
+(p1 <- predict(mod2,data.frame(logL=log(500)),interval="confidence"))
+exp(p1)
+(p2 <- predict(mod2,data.frame(logL=log(500)),interval="prediction"))
+exp(p2)
+```
+
+#### Plot fitted curve with 95% prediction interval
+```{r}
+L <- seq(240,760,length.out=199)
+W <- exp(predict(mod2,data.frame(logL=log(L)),interval="prediction"))
+head(W)
+tail(W)
+plot(w ~ tl, data=dat, pch=19,col="black",xlab="Total Length (mm)",ylab="Weight (g)")
+lines(L,W[,"fit"],lwd=2,col="red")
+lines(L,W[,"lwr"],lwd=2,lty=2,col="red")
+lines(L,W[,"upr"],lwd=2,lty=2,col="red")
+```

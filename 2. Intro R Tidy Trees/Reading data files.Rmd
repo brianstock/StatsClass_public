@@ -1,0 +1,181 @@
+---
+title: "Reading in data"
+author: "Josh Stewart"
+date: "3/20/2017"
+output: html_document
+---
+
+## First we need to read in our data
+
+```{r Reading Data}
+
+# Use ? before a function() to pull up the help file
+?read.csv()
+
+# read.csv() will bring our data into R, but we want to save it so we can manipulate it
+read.csv("Tree Data.csv",header=F)
+
+# So we assign it to an object (Trees)
+Trees <- read.csv("Tree Data.csv",header=T)
+
+
+# Here are some functions that allow us to explore our data before proceeding:
+
+head(Trees) # Shows you the top 6 lines of an object
+
+summary(Trees) # Summarizes your data
+ 
+names(Trees) # Shows you the column names of your data
+
+dim(Trees) # Shows you the number of rows, number of columns
+
+```
+
+## Convert wide-format data to long-format
+
+```{r Transforming data to Long format}
+
+# Let's use a function from tidyr to clean up our data:
+
+library(tidyr)
+
+?gather()
+
+# Key is the factor variable that gather() will create, and Circumference is the continuous variable:
+
+Tidy.Trees <- gather(Trees,key=Location,value=Circumference) 
+
+Tidy.Trees # How is this different from Trees?
+
+# We'll add the na.rm=T argument to remove NA's introduced by uneven column lengths:
+
+Tidy.Trees <- gather(Trees,key=Location,value=Circumference,na.rm=T) 
+
+```
+
+## Indexing
+
+```{r Select a Column}
+
+# Use the $ operator to select a named column:
+
+head(Tidy.Trees$Circumference)
+
+Tidy.Trees$Location 
+
+table(Tidy.Trees$Location) # Summarizes the number of different categories
+
+# Use the hist() function to plot a histogram of your circumferences:
+
+hist(Tidy.Trees$Circumference) 
+
+
+
+```
+
+
+```{r Matrix Indexing}
+
+# To select circumferences, we can use $ :
+
+Tidy.Trees$Circumference
+
+# Or we can use matrix indexing to achieve the same result:
+
+Tidy.Trees[,2] 
+
+# With a 2-dimensional object (i.e. data frame or matrix),
+# rows come first and then columns, separated by a ",":
+
+Tidy.Trees[23,2] # Row 23, Column 2
+
+Tidy.Trees[10:50,2] # Select a range of rows
+
+# You can also change the order of rows or columns presented
+# by using a vector c() or a reverse range ":" inside the indexing brackets [ ]:
+
+Tidy.Trees[c(4,7,1,9,13,2),2:1]
+
+
+# The which() function allows us to find the index of values that meet specific criteria:
+
+which(Tidy.Trees$Location=="Rio") # Find the indexes of Tidy.Trees$Location that match "Rio" (note the double ==)
+
+# Then we can place that which function inside indexing brackets [ ]
+# in place of a number or vector c() to select those rows or columns:
+
+Tidy.Trees[which(Tidy.Trees$Location=="Rio"),] # Select the rows in Tidy.Trees for which Location matches
+# "Rio", and return all columns (there is no number selected after the , within the [ ])
+
+Tidy.Trees[which(Tidy.Trees[,1]=="Rio"),] # Tidy.Trees[,1] is the same as Tidy.Trees$Location
+
+
+# Find all of the rows where Circumference is greater than 100:
+
+Tidy.Trees[which(Tidy.Trees$Circumference>100),]
+
+```
+
+## Plotting Histograms
+One of the first things I do when I load in data is plot a histogram. This allows you to visually examine the distribution of your data, determine whether you need to transform you data, quickly identify possible outliers, and begin to decide what type of analysis might be most appropriate.
+
+```{r Plotting Histograms}
+
+hist(Tidy.Trees$Circumference) # Basic hist() function
+
+hist(Tidy.Trees$Circumference[which(Tidy.Trees$Location=="Rio")]) # Use which() to plot hist from one location
+
+hist(Tidy.Trees[which(Tidy.Trees[,1]=="Rio"),2]) # Another way of doing the same thing with less code
+
+
+par(mfrow=c(2,2)) # Use the par() function to create a plotting window with 2 rows and 2 columns
+
+# Play with colors and breaks to make your histograms look good
+hist(Tidy.Trees[which(Tidy.Trees[,1]=="Rio"),2], breaks=20, col="lightgrey")
+hist(Tidy.Trees[which(Tidy.Trees[,1]=="Cascada"),2],breaks=20,col="lightgrey")
+hist(Tidy.Trees[which(Tidy.Trees[,1]=="Pueblo"),2],breaks=20,col="lightgrey")
+
+
+```
+
+```{r Boxplots}
+# Another option is plotting all of your data in one graphic for easy comparison
+# The best way to do this is using a boxplot:
+?boxplot
+
+# As with all R functions, the forumla call requires the response variable
+# (in this case the Circumference) to be on the left side of the ~, and the
+# explanatory variable (in this case Location) to be on the right side:
+boxplot(formula=Circumference ~ Location, data = Tidy.Trees)
+
+
+```
+
+## A quick refresher on variable types
+
+```{r Variable Types}
+
+
+class(Tidy.Trees$Location) # Our Location data were read in as characters, as they are text
+
+class(Tidy.Trees$Circumference) # Our circumference data are numeric
+
+as.factor(Tidy.Trees$Location) # We can convert our character data to factors 
+# (most functions are smart enough to do this autmatically, like boxplot() above)
+
+as.numeric(Tidy.Trees$Location) # We can't convert character data to numeric
+
+as.numeric(as.factor(Tidy.Trees$Location)) # But we can convert factor data to numeric
+
+
+# Simple example with letters:
+
+letters<-c("b","c","a")
+
+class(letters)
+
+as.factor(letters) # R alphabetizes the factor levels, even if they're out of order in your data frame
+
+as.numeric(as.factor(letters)) # And when they're converted to numeric from factor, they're kept in alphabetical order
+
+```

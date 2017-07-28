@@ -1,0 +1,66 @@
+---
+title: "HW"
+author: "Lynn Waterhouse"
+date: "March 29, 2017"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Assignment
+
+This homework includes problems that may require: T-tests, chi-square, linear regression, or multiple linear regression.
+
+For each problem:
+(1) Read in the data
+(2) write out the null and alternative hypotheses
+(4) choose the correct test. 
+(3) verify the assumptions are met
+(4) conduct the test and report p-value
+(5) Write out the result of the test.
+(6) Write out a conclusion from the result.
+
+For some problems you will also be asked to make a plot.
+
+
+## Problem 1
+
+We conduct a survey and count the number of individuals for 6 different fish species from inside a marine reserve and from outside the marine reserve. We want to know if there is a difference.  The data are found in "marinepark.csv".
+
+Make a 2 panel barplot (use par(mfrow=c(2,1))) and plot the # of species for Inside the Marine Park and for Outside the Marine Park.
+
+```{r echo=FALSE}
+set.seed(123)
+outside<-c(54,79,30,81,1005,720)
+inside<-round(inside*runif(6,.8,2.3))
+mydat<-data.frame(rbind(inside,outside))
+colnames(mydat)<-c("Grouper","Ray","Shark","Snapper","Wrasse","Jack")
+write.csv(mydat,"marinepark.csv")
+```
+
+```{r eval=FALSE, echo=FALSE}
+#(1) Read in the data
+mydat<-read.csv("marinepark.csv")
+#(2) write out the null and alternative hypotheses
+#    H0: the location and species composition are independent
+#    Ha: the location and species composition are not independent
+#(4) choose the correct test. 
+#    chi-square test for independence
+#(3) verify the assumptions are met
+#   all categories >5
+#(4) conduct the test and report p-value
+chisq.test(mydat)
+#   p-value < 2.2e-16
+#(5) Write out the result of the test.
+#   reject the null hypothesis
+#(6) Write out a conclusion from the result.
+#   we conclude that location and species composition are not indepedent, 
+#   there is some reason other than random chance that there are a different # of 
+#   each species in the marine park and outside the marine park
+par(mfrow=c(2,1),oma=c(.1,.1,.1,.1), mar=c(2,3,1,1))
+barplot(inside,ylab="Count",main="Inside Marine Park")
+barplot(outside,names.arg=colnames(mydat),ylab="Count",main="Outside Marine Park")
+
+```

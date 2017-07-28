@@ -1,0 +1,170 @@
+---
+title: "Generalized Linear Models (GLMs)"
+author: "Josh Stewart"
+date: "3/28/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+###Linear Regression Review
+
+```{r make linear data}
+Rainfall<-runif(30,0,60)
+Diameter<-3+Rainfall*2.75+rnorm(30,0,6)
+plot(x=Rainfall,y=Diameter,pch=19)
+
+```
+
+###Fit Linear Model
+
+```{r linear regression}
+
+mylm<-lm(Diameter~Rainfall)
+
+
+plot(x=Rainfall,y=Diameter,pch=19)
+lines(x=Rainfall,predict.lm(mylm))
+
+
+```
+
+```{r Summary of linear regression}
+summary(mylm)
+```
+
+
+
+```{r Generate Binomial Data, echo=F}
+
+set.seed(456)
+Temperature<-runif(200,24,31)
+TurtleProb<-plogis(-27.5+0.97*Temperature)
+
+observations<-rbinom(200,1,TurtleProb)
+
+TurtleData<-data.frame(observations,Temperature)
+
+write.csv(TurtleData,"TurtleData.csv",row.names=F)
+```
+
+
+###How do we fit a model to data like this?
+
+```{r Plot Binomial Data}
+
+TurtleData<-read.csv("TurtleData.csv")
+
+with(TurtleData,plot(Temperature,observations,pch=19))
+
+```
+
+###First, how to fit a GLM:
+
+```{r Binomial GLM}
+
+TurtleGLM<-glm(observations~Temperature,family=binomial(link='logit'),data=TurtleData)
+summary(TurtleGLM)
+coef(TurtleGLM)
+```
+
+```{r Logit Link Function 1}
+
+GLM_y<-TurtleData$Temperature*coef(TurtleGLM)[2]+coef(TurtleGLM)[1]
+plot(x=TurtleData$Temperature,y=GLM_y,pch=19)
+
+```
+
+###Back to the link function...
+
+```{r link function, eval=F}
+TurtleGLM<-glm(observations~Temperature,family=binomial(link='logit'),data=TurtleData)
+```
+
+####We need to convert this linear relationship to probabilities:
+```{r Logit Link Function 2}
+?plogis #using the Logistic Distribution makes this a Logistic Regression
+
+#pnorm(-1), pnorm(1), pnorm(0)
+
+#plogis(-4), plogis(4), plogis(0)
+
+plot(x=TurtleData$Temperature,y=plogis(GLM_y),pch=19)
+
+```
+
+####Plot GLM Fit with our Binomial data:
+
+```{r Binomial GLM Fit}
+
+
+plot(x=TurtleData$Temperature,y=TurtleData$observations,pch=19)
+points(x=TurtleData$Temperature,y=plogis(GLM_y),pch=19,col="red")
+
+
+```
+
+####Make it look pretty:
+
+```{r Binomial GLM Fit Pretty}
+
+
+plot(x=TurtleData$Temperature,y=TurtleData$observations,pch=19)
+
+Temp<-data.frame(seq(24,31,length.out = 100))
+colnames(Temp)<-"Temperature"
+
+Prob<-data.frame(predict.glm(TurtleGLM,newdata=Temp,type="response"))
+colnames(Prob)<-"Prob"
+
+lines(x=Temp$Temp,y=Prob$Prob,pch=19,col="red")
+
+```
+
+####Add confidence intervals:
+```{r Binomial GLM Fit CIs}
+
+plot(x=TurtleData$Temperature,y=TurtleData$observations,pch=19)
+
+link<-as.vector(predict.glm(TurtleGLM,newdata=Temp,type="link"))
+
+se<-as.vector(predict.glm(TurtleGLM,newdata=Temp,type="link",se.fit=T)$se.fit)
+
+upper<-link+se*1.96
+lower<-link-se*1.96
+
+#Check what it looks like to use plogis() on these values:
+#plogis(link)
+#plogis(upper)
+#plogis(lower)
+
+lines(x=Temp$Temperature,y=plogis(link),col="red")
+lines(x=Temp$Temperature,y=plogis(upper),col="red",lty=2)
+lines(x=Temp$Temperature,y=plogis(lower),col="red",lty=2)
+
+
+```
+
+
+###At what Temperature do I have a 50% chance of seeing turtles?
+```{r 50% Value}
+#Start with a coarse prediction interval:
+Temp<-data.frame(seq(24,31,length.out = 100))
+colnames(Temp)<-"Temperature"
+ 
+# Check which index is closest to the probability value you want 
+# (50% in this case, but maybe something different in another instance)
+predict.glm(TurtleGLM,newdata=Temp,type="response")
+
+# And then go back to your Temp vector to see what temperature value that is
+
+
+# If you just want the 50% probability value, you can divide the negative intercept by the slope:
+
+LD50 <- -coef(TurtleGLM)[1] / coef(TurtleGLM)[2]
+LD50
+
+```
+
