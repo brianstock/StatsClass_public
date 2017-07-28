@@ -7,11 +7,13 @@ March 23 -- April 2, 2017
 
 Many thanks to our funders:
 
-[![](https://raw.githubusercontent.com/brianstock/StatsClass_public/master/logos/saveourseas.png | width=150)](http://saveourseas.com/)
-[![](https://raw.githubusercontent.com/brianstock/StatsClass_public/master/logos/WDAFS.png | width=150)](https://wdafs.org/)
-[![](https://raw.githubusercontent.com/brianstock/StatsClass_public/master/logos/cmbc.jpeg | width=150)](https://scripps.ucsd.edu/centers/cmbc/)
-[![](https://raw.githubusercontent.com/brianstock/StatsClass_public/master/logos/gcmp-logo.png | width=150)](http://gulfprogram.ucsd.edu/)
-[![](https://raw.githubusercontent.com/brianstock/StatsClass_public/master/logos/mantatrust.png | width=150)](http://www.mantatrust.org/)
+<img src="https://raw.githubusercontent.com/brianstock/StatsClass_public/master/logos/saveourseas.png" alt="" width="150">
+
+[![](https://raw.githubusercontent.com/brianstock/StatsClass_public/master/logos/saveourseas.png)](http://saveourseas.com/)
+[![](https://raw.githubusercontent.com/brianstock/StatsClass_public/master/logos/WDAFS.png)](https://wdafs.org/)
+[![](https://raw.githubusercontent.com/brianstock/StatsClass_public/master/logos/cmbc.jpeg)](https://scripps.ucsd.edu/centers/cmbc/)
+[![](https://raw.githubusercontent.com/brianstock/StatsClass_public/master/logos/gcmp-logo.png)](http://gulfprogram.ucsd.edu/)
+[![](https://raw.githubusercontent.com/brianstock/StatsClass_public/master/logos/mantatrust.png)](http://www.mantatrust.org/)
 
 https://github.com/WaterLynn/StatsClass
 
