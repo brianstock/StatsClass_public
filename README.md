@@ -11,7 +11,7 @@ Many thanks to our funders:
 <img src="https://raw.githubusercontent.com/brianstock/StatsClass_public/master/logos/WDAFS.png" alt="" height="50">
 </a>
 <a href="https://scripps.ucsd.edu/centers/cmbc/">
-<img src="https://raw.githubusercontent.com/brianstock/StatsClass_public/master/logos/cmbc.jpeg" alt="" height="50">
+<img src="https://raw.githubusercontent.com/brianstock/StatsClass_public/master/logos/cmbc.png" alt="" height="50">
 </a>
 <a href="http://gulfprogram.ucsd.edu/">
 <img src="https://raw.githubusercontent.com/brianstock/StatsClass_public/master/logos/gcmp-logo.png" alt="" height="50">
