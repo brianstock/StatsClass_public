@@ -10,15 +10,19 @@ Many thanks to our funders:
 <a href="http://saveourseas.com/">
 <img src="https://raw.githubusercontent.com/brianstock/StatsClass_public/master/logos/saveourseas.png" alt="" height="50">
 </a>
+<div class="horizontalgap" style="width:10px"></div>
 <a href="https://wdafs.org/">
 <img src="https://raw.githubusercontent.com/brianstock/StatsClass_public/master/logos/WDAFS.png" alt="" height="50">
 </a>
+<div class="horizontalgap" style="width:10px"></div>
 <a href="https://scripps.ucsd.edu/centers/cmbc/">
 <img src="https://raw.githubusercontent.com/brianstock/StatsClass_public/master/logos/cmbc.jpeg" alt="" height="50">
 </a>
+<div class="horizontalgap" style="width:10px"></div>
 <a href="http://gulfprogram.ucsd.edu/">
 <img src="https://raw.githubusercontent.com/brianstock/StatsClass_public/master/logos/gcmp-logo.png" alt="" height="50">
 </a>
+<div class="horizontalgap" style="width:10px"></div>
 <a href="http://www.mantatrust.org/">
 <img src="https://raw.githubusercontent.com/brianstock/StatsClass_public/master/logos/mantatrust.png" alt="" height="50">
 </a>
