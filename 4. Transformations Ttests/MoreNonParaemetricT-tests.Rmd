@@ -1,0 +1,92 @@
+---
+title: "Non-Parametric T-tests"
+author: "Lynn Waterhouse"
+date: "Aug 10, 2018"
+output: html_document
+---
+
+#More on Non-parametric T-tests
+A statistical method is called non-parametric if it makes no assumption on the population distribution or sample size.
+
+We often want to make this decision if we have a small sample size. If the sample size is small, we may be unable to assess the normality of the distribution.  Transformations may be hard to assesss with small sample sizes.
+
+Thankfully, there are non-parametric versions of many of the parametric tests. Here we focus on non-parametric equivalents of T-tests.
+
+Recall, we learned about 3 type of T-tests.
+
+1. one sample non-parametric T-test equivalent --> One-sample Wilcoxon Test
+2. paired non-parametric T-test equivalent --> Paired wilcoxon test
+3. two sample non-parametric T-test  equivalent --> Two-Samples Wilcoxon Test
+
+Here we will use the 'mtcars' data set. This data set is built in to base R. Let's take a closer look at this data.
+```{r}
+head(mtcars)
+summary(mtcars)
+```
+
+#One-Sample Wilcoxon Test
+The one-sample T-test compared the mean of the data against a constant value. The one-sample Wilcoxon Test compares the median against a value.
+
+Problem:
+Without assuming the data to have normal distribution, decide at .05 significance level if the gas mileage data of all cars in mtcars is better than 20mpg.
+
+```{r}
+wilcox.test(mtcars$mpg, mu = 20, alternative = "greater")
+```
+Solution
+The null hypothesis is that the gas mileage data of all cars in mtcars is equal to or less than 20mpg. To test the hypothesis, we apply the wilcox.test function to compare our samples against 20mpg. As the p-value turns out to be 0.614, and is greater than the .05 significance level, we fail to reject the null hypothesis.
+
+Answer
+At .05 significance level, we conclude that there is not statistical evidence to say that the median gas mileage of all cars in mtcar is greater than 20mpg.
+
+##Paired 
+Two data samples are matched if they come from repeated observations of the same subject. Using the Wilcoxon Signed-Rank Test, we can decide whether the corresponding data population distributions are identical without assuming them to follow the normal distribution.
+
+Problem:
+Without assuming the data to have normal distribution, decide at .05 significance level if the distribution of the weights of fish 2 weeks after being fed a special diet are different than prior to receiving the food, i.e., do they have identical distributions?
+```{r}
+# Data in two numeric vectors
+# ++++++++++++++++++++++++++
+# Weight of the fish before being fed special diet
+before <-c(100.1, 109.9, 102.7, 113, 141.4, 116.9, 102.2, 95.5, 105.2, 113.7)
+# Weight of the fish 2 weeks after being fed the special diet
+after <-c(126.5, 110.3, 105.4, 125.6, 106.5, 156.8, 132.5, 145.2, 99.6, 115.3)
+# Create a data frame
+fish_weights <- data.frame( 
+                group = rep(c("before", "after"), each = 10),
+                weight = c(before,  after)
+                )
+```
+Solution
+The null hypothesis is that the fish weights from the two time points are identical populations. To test the hypothesis, we apply the wilcox.test function to compare the matched samples. 
+
+```{r}
+wilcox.test(before,after, paired=TRUE)
+```
+For the paired test, we set the "paired" argument as TRUE. As the p-value turns out to be  0.1309, and is not less than the .05 significance level, we fail to reject the null hypothesis.
+
+Answer
+At .05 significance level, we conclude that the fish weights over the two weeks are identical populations.
+
+##Two-Sample Wilcoxon Test
+
+Problem
+Without assuming the data to have normal distribution, decide at .05 significance level if the gas mileage data of manual and automatic transmissions in mtcars have identical data distribution.
+
+
+```{r}
+wilcox.test(mpg ~ am, data=mtcars) 
+```
+Solution
+The null hypothesis is that the gas mileage data of manual and automatic transmissions are identical populations. To test the hypothesis, we apply the wilcox.test function to compare the independent samples. As the p-value turns out to be 0.001817, and is less than the .05 significance level, we reject the null hypothesis.
+
+Answer
+At .05 significance level, we conclude that the gas mileage data of manual and automatic transmissions in mtcar are nonidentical populations.
+
+sources:
+1. <http://www.r-tutor.com/elementary-statistics/non-parametric-methods>
+2. <http://www.sthda.com/english/wiki/unpaired-two-samples-wilcoxon-test-in-r>
+3. <http://www.sthda.com/english/wiki/one-sample-wilcoxon-signed-rank-test-in-r>
+4. <http://rcompanion.org/handbook/F_01.html>
+5. <https://stats.stackexchange.com/questions/121852/how-to-choose-between-t-test-or-non-parametric-test-e-g-wilcoxon-in-small-sampl>
+
